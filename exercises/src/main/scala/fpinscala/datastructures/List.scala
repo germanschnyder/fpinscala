@@ -1,5 +1,7 @@
 package fpinscala.datastructures
 
+import scala.annotation.tailrec
+
 sealed trait List[+A] // `List` data type, parameterized on a type, `A`
 case object Nil extends List[Nothing] // A `List` data constructor representing the empty list
 /* Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`,
@@ -82,6 +84,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   def length[A](l: List[A]): Int =
     foldRight(l, 0)((_, acc) => 1 + acc)
 
+  @tailrec
   def foldLeft[A, B](l: List[A], z: B)(f: (B, A) => B): B = l match {
     case Nil => z
     case Cons(h, t) => foldLeft(t, f(z, h))(f)
@@ -96,9 +99,69 @@ object List { // `List` companion object. Contains functions for creating and wo
   def length3[A](l: List[A]): Int =
     foldLeft(l, 0)((acc, _) => acc + 1)
 
+  def reverse[A](l: List[A]) = {
 
-  def map[A, B](l: List[A])(f: A => B): List[B] = l match {
+    foldLeft(l, List[A]())((acc: List[A], elem: A) => Cons(elem, acc))
+
+  }
+
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = {
+    foldRight(l, r)((elem: A, acc: List[A]) => Cons(elem, acc))
+  }
+
+  def concat[A](ls: List[List[A]]): List[A] = ls match {
+    case Nil => Nil
+    case Cons(h, Nil) => h
+    case Cons(h, Cons(h2, t)) => concat(Cons(appendViaFoldRight(h, h2), t))
+  }
+
+  def concat2[A](ls: List[List[A]]): List[A] =
+    foldRight(ls, Nil: List[A])(append)
+
+  //Still using fold instead of map...
+  def add1(l: List[Int]): List[Int] =
+    foldRight(l, Nil: List[Int])((a, b) => Cons(a + 1, b))
+
+  def doubleToString(l: List[Double]): List[String] =
+    foldRight(l, Nil: List[String])((a, b) => Cons(a.toString, b))
+
+  //Start map world
+
+  def mapWithPM[A, B](l: List[A])(f: A => B): List[B] = l match {
     case Nil => Nil
     case Cons(h, t) => Cons(f(h), map(t)(f))
   }
+
+  def map[A, B](l: List[A])(f: A => B): List[B] =
+    foldRight(l, Nil: List[B])((h, t) => Cons(f(h), t))
+
+  def filter[A](l: List[A])(f: A => Boolean): List[A] =
+    foldRight(l, Nil: List[A])((h, t) => {
+      if (f(h)) Cons(h, t)
+      else t
+    })
+
+  def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] =
+    concat(map(l)(f))
+
+  def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] =
+    flatMap(l)(elem => if (f(elem)) List(elem) else Nil)
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = (a, b) match {
+    case (_, Nil) => Nil
+    case (Nil, _) => Nil
+    case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addPairwise(t1, t2))
+  }
+
+
+  def zipWith[A, B, C](a: List[A], b: List[B])(f: (A, B) => C): List[C] = (a, b) match {
+    case (_, Nil) => Nil
+    case (Nil, _) => Nil
+    case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
+
+  }
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = // sup match {
+    ???
+  //}
 }
